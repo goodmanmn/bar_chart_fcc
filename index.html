@@ -1,0 +1,137 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      svg {
+        background-color: aqua;
+      }
+      rect {
+        background-color: black;
+      }
+      #tooltip {
+        position: absolute;
+        background-color: white;
+      }
+
+      .bar:hover {
+        fill: aliceblue;
+      }
+    </style>
+    <title>Bar Graph</title>
+  </head>
+  <body>
+    <script type="module">
+      import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+      d3.json(
+        "https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json"
+      )
+        .then(data => {
+          const dataset = data.data;
+          const xLabel = data.column_names[0];
+          const yLabel = data.column_names[1];
+          const title = "USA GDP 1947-2015";
+          const height = 400;
+          const width = 800;
+          const padding = 40;
+          const barWidth = (width - padding) / dataset.length;
+          const xMaxValue = d3.max(dataset, d => d[0]);
+          const xMinValue = d3.min(dataset, d => d[0]);
+          const yMaxValue = d3.max(dataset, d => d[1]);
+          const xScale = d3
+            .scaleTime()
+            .domain([new Date(xMinValue), new Date(xMaxValue)])
+            .range([padding, width - padding]);
+          const yScale = d3
+            .scaleLinear()
+            .domain([0, yMaxValue])
+            .range([height - padding, padding]);
+          const xAxis = d3.axisBottom(xScale);
+          const yAxis = d3.axisLeft(yScale);
+          let tooltip = d3
+            .select("body")
+            .append("div")
+            // .attr("class", "tooltip")
+            .attr("id", "tooltip")
+            .style("visibility", "hidden");
+
+          const svg = d3
+            .select("body")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+          svg
+            .selectAll("rect")
+            .data(dataset)
+            .enter()
+            .append("rect")
+            .attr("class", "bar")
+            .attr("x", (d, i) => ((width - padding * 2) / dataset.length) * i)
+            .attr("y", (d, i) => yScale(d[1]))
+            .attr("height", (d, i) => height - padding - yScale(d[1]))
+            .attr("width", barWidth)
+            .attr("transform", "translate(" + padding + ",0)")
+            .attr("data-date", d => d[0])
+            .attr("data-gdp", d => d[1])
+            .on("mouseover", (e, d) => {
+              tooltip.attr("style", "visibiity: visibile");
+
+              tooltip
+                .html(d[0] + "<br>$" + d[1])
+                .attr("data-date", () => d[0])
+                .attr("data-gdp", () => d[1]);
+            })
+            .on("mousemove", () => {
+              d3.select("#tooltip")
+                .style("visibility", "visible")
+                .style("left", event.pageX + 10 + "px")
+                .style("top", event.pageY + 10 + "px")
+                .style("transform", "translate: 60px");
+            })
+            .on("mouseleave", d =>
+              tooltip.attr("style", "visibility: hidden;")
+            );
+
+          svg
+            .append("g")
+            .attr("transform", "translate(0," + (height - padding) + ")")
+            .call(xAxis)
+            .attr("id", "x-axis");
+          svg
+            .append("g")
+            .attr("transform", "translate(" + padding + ", 0)")
+            .call(yAxis)
+            .attr("id", "y-axis");
+          svg
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 40)
+            .attr("x", 0 - 200)
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text("GDP (billion)");
+          svg
+            .append("text")
+            .attr("y", height - padding / 2)
+            .attr("x", width / 2)
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text("Year");
+
+          svg
+            .append("text")
+            .attr("y", padding)
+            .attr("x", width / 2 - padding)
+            .text(title);
+        })
+        .catch(error => {
+          console.log("There was a problem with the request", error);
+        });
+    </script>
+    <script
+      crossorigin
+      src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+  </body>
+</html>
